@@ -1,0 +1,112 @@
+import numpy.random as npr
+
+def prior_sample(model, nodes):
+  """
+  Generates and returns a single sample as a {variable: value} dictionary
+  """
+  sample = {}
+  for n in nodes:
+    cpd = model.get_cpds(n)
+    values = (cpd.state_names)[n]
+    probs = prob_given_parents(cpd, sample)
+    sample[n] = npr.choice(values, p=probs)
+  return sample
+
+
+def prob_given_parents(cpd, sample):
+  """
+  Returns probability distribution of the node to which cpd corresponds, 
+  conditioned on its parents' values in sample
+  """
+  factors = cpd.variables
+  states = cpd.state_names 
+
+  col = 0
+  skip = 1
+  for i in range(len(factors)-1):
+    parent_var = factors[-i-1]
+    parent_val = sample[parent_var]
+    ind = states[parent_var].index(parent_val)
+    col += ind*skip
+    skip *= len(states[parent_var])
+
+  return (cpd.get_values())[:,col]  
+
+
+def rejection_sample(model, nodes, N, query, evidence={}):
+  """
+  INPUTS: Problem model, nodes, total number of samples to try (including 
+  inconsistent ones), query variable, and a {variable: value} evidence dict
+  OUTPUTS: dist, a dictionary providing the estimated distribution for query
+           num_consistent, number of consistent samples generated
+  """
+  dist = {val:0 for val in model.get_cpds(query).state_names[query]}
+
+  # YOUR CODE HERE
+  num_samples=0
+  evikeys= list(evidence.keys())
+  evivals= list(evidence.values())
+  for i in range(N):
+      s=prior_sample(model, nodes) 
+      acc=True
+      for j in range(len(evikeys)):
+         acc= acc and (evikeys[j] in s and evivals[j] == s[evikeys[j]])
+      if (acc==True):
+        num_samples=num_samples+1
+        sval=s[query]
+        dist[sval]=dist[sval]+1
+        
+  for k in list(dist.keys()):
+     dist[k]=dist[k]/num_samples  
+  
+
+  return dist,num_samples
+  
+  
+  def weighted_sample(model, nodes, evidence):
+  """
+  Generate a sample consistent with evidence, along with corresponding weight
+  """
+  w = 1
+  sample = {}
+  for n in nodes:
+    cpd = model.get_cpds(n)
+    values = (cpd.state_names)[n]
+    if n in evidence:
+      # YOUR CODE HERE
+      sample[n]=evidence[n]      
+      probs1 = prob_given_parents(cpd, sample)      
+      indx1=values.index(evidence[n])
+      w=w*probs1[indx1]
+
+    else:
+      probs = prob_given_parents(cpd, sample)
+      sample[n] = npr.choice(values, p=probs)
+
+  return sample, w
+
+
+def likelihood_weighting(model, nodes, N, query, evidence={}):
+  """
+  INPUTS: Problem model, nodes, query variable, number of samples, 
+          and a {variable: value} evidence dict
+  OUTPUT: dist, a dictionary providing the estimated distribution for query
+  """
+  dist = {val:0 for val in model.get_cpds(query).state_names[query]}
+
+  # YOUR CODE HERE
+  
+  for i in range(N):
+    s,w=weighted_sample(model, nodes, evidence)
+    sval=s[query]
+    dist[sval]=dist[sval]+w
+  
+  W=sum(dist.values())
+  #print("finalW:",W)
+  for k in list(dist.keys()):
+     dist[k]=dist[k]/W
+  
+
+  return dist
+
+
