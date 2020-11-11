@@ -46,7 +46,7 @@ def Qvalue(state, action, values, p, gamma):
     return p*(dr+gV[down]) + pn*(-1+gV[left]) + pn*(-1+gV[right])
     
     
-    def value_iteration(values, p, gamma, threshold=1e-6):
+def value_iteration(values, p, gamma, threshold=1e-6):
   # Given an initial array of values, returns array of values optimal within threshold
   max_diff = float("inf")
   while max_diff > threshold:
@@ -72,7 +72,7 @@ def Qvalue(state, action, values, p, gamma):
 
   return values
   
-  def extract_policy(values, p, gamma):
+def extract_policy(values, p, gamma):
   # Extract the optimal policy associated with the given optimal values
   policy = np.empty(values.shape, dtype=object)
   for i in range(4):
@@ -153,7 +153,7 @@ def step(state, action, p):
   
   
   
-  def SARSA(Qvalues, p, gamma, alpha, epsilon, episodes=100000):
+def SARSA(Qvalues, p, gamma, alpha, epsilon, episodes=100000):
   # SARSA temporal difference learning using initial Qvalues and given parameters
   # Returns a learned policy (numpy 2d array)
   for i in range(episodes):
